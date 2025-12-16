@@ -1,0 +1,45 @@
+
+action "pre_market_order_cancelled" "svm::deploy_subgraph" {
+    program_id = action.deploy_pre_market.program_id
+    program_idl = action.deploy_pre_market.program_idl
+    block_height = 0 // action.deploy_pre_market.block_height
+    event {
+        name = "OrderCancelled"
+    }
+}
+
+action "pre_market_order_created" "svm::deploy_subgraph" {
+    program_id = action.deploy_pre_market.program_id
+    program_idl = action.deploy_pre_market.program_idl
+    block_height = 0 // action.deploy_pre_market.block_height
+    event {
+        name = "OrderCreated"
+    }
+}
+
+action "pre_market_order_filled" "svm::deploy_subgraph" {
+    program_id = action.deploy_pre_market.program_id
+    program_idl = action.deploy_pre_market.program_idl
+    block_height = 0 // action.deploy_pre_market.block_height
+    event {
+        name = "OrderFilled"
+    }
+}
+
+action "pre_market_token_details_created" "svm::deploy_subgraph" {
+    program_id = action.deploy_pre_market.program_id
+    program_idl = action.deploy_pre_market.program_idl
+    block_height = 0 // action.deploy_pre_market.block_height
+    event {
+        name = "TokenDetailsCreated"
+    }
+}
+
+action "pre_market_token_fulfill_time_set" "svm::deploy_subgraph" {
+    program_id = action.deploy_pre_market.program_id
+    program_idl = action.deploy_pre_market.program_idl
+    block_height = 0 // action.deploy_pre_market.block_height
+    event {
+        name = "TokenFulfillTimeSet"
+    }
+}
