@@ -4,7 +4,7 @@ use anchor_spl::{
     token_interface::{ self, Mint, TokenAccount, TokenInterface, TransferChecked },
 };
 
-use crate::{ error::ErrorCodes, state::{ OfferType, OrderBook, OrderFilled, TokenDetails, Users } };
+use crate::{ error::ErrorCodes, state::{ OfferType, OrderBook, OrderFilled, Users } };
 
 #[derive(Accounts)]
 #[instruction(create_id: u64, order_id: u64)]
@@ -21,26 +21,19 @@ pub struct User<'info> {
         seeds = [
             b"user_details",
             signer.key().as_ref(),
-            &create_id.to_be_bytes(),
-            &order_id.to_be_bytes(),
+            &create_id.to_le_bytes(),
+            &order_id.to_le_bytes(),
         ],
         bump
     )]
     pub user_account: Account<'info, Users>,
-    // #[account(
-    //     mut,
-    //     seeds = [b"token_details", signer.key().as_ref(), &create_id.to_le_bytes()],
-    //     bump
-    // )]
-    // pub token_details_account: Account<'info, TokenDetails>,
 
     #[account(
         mut,
         seeds = [
             b"create_order",
-            order_account_details.order_creator.as_ref(),
-            &order_account_details.create_id.to_le_bytes(),
-            &order_account_details.order_id.to_le_bytes(),
+            create_id.to_le_bytes().as_ref(),
+            order_id.to_le_bytes().as_ref(),
         ],
         bump
     )]
@@ -63,7 +56,6 @@ pub struct User<'info> {
     pub details_token_account: InterfaceAccount<'info, TokenAccount>,
 
     pub token_program: Interface<'info, TokenInterface>,
-
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
@@ -74,16 +66,22 @@ pub fn process_user_order(
     create_id: u64,
     order_id: u64
 ) -> Result<()> {
-    let order_details = &mut ctx.accounts.order_account_details;
-    let user_details = &mut ctx.accounts.user_account;
-    let collateral_amount = (((amount as u128) * (order_details.point_price as u128)) /
-        10000) as u64;
+    let order = &mut ctx.accounts.order_account_details;
+    let user = &mut ctx.accounts.user_account;
+
+    // ───── Safety Checks ─────
+    // require!(order.is_active, ErrorCodes::OrderNotActive);
+    require!(order.order_id == order_id, ErrorCodes::InvalidOrderId);
+
+    // require!(
+    //     order.total_filled_points + amount <= order.point,
+    //     // ErrorCodes::OrderOverFilled
+    // );
+
+    let collateral_amount = (((amount as u128) * (order.point_price as u128)) / 10_000) as u64;
     let decimals = ctx.accounts.mint.decimals;
 
-    if order_details.order_id != order_id {
-        return Err(ErrorCodes::InvalidOrderId.into());
-    }
-
+    // ───── Transfer collateral ─────
     let accounts = TransferChecked {
         from: ctx.accounts.user_token_account.to_account_info(),
         to: ctx.accounts.details_token_account.to_account_info(),
@@ -91,29 +89,26 @@ pub fn process_user_order(
         authority: ctx.accounts.signer.to_account_info(),
     };
 
-    let program = ctx.accounts.token_program.to_account_info();
-    let cpi_ctx = CpiContext::new(program, accounts);
+    let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), accounts);
 
     token_interface::transfer_checked(cpi_ctx, collateral_amount, decimals)?;
 
-    user_details.collect_point = amount;
-    user_details.collerateral_amount = collateral_amount;
-    user_details.order_id = order_id;
-    user_details.create_id = create_id;
-    user_details.user_account = ctx.accounts.signer.key();
-    if order_details.offer_type == OfferType::SELL {
-        user_details.is_buyer = true;
-    } else {
-        user_details.is_buyer = false;
-    }
+    // ───── Update user state ─────
+    user.collect_point = amount;
+    user.collerateral_amount = collateral_amount;
+    user.order_id = order_id;
+    user.create_id = create_id;
+    user.user_account = ctx.accounts.signer.key();
+    user.is_buyer = order.offer_type == OfferType::SELL;
 
-    order_details.total_filled_points += amount;
-    order_details.total_filled_collater_amt += amount;
-    order_details.available_collaleral_amt += amount;
-    order_details.user_list.push(user_details.key());
+    // ───── Update order state ─────
+    order.total_filled_points += amount;
+    order.total_filled_collater_amt += collateral_amount;
+    order.available_collaleral_amt += collateral_amount;
+    order.user_list.push(user.key());
 
-    if order_details.total_filled_points == order_details.point {
-        order_details.is_active = false;
+    if order.total_filled_points >= order.point {
+        order.is_active = false;
     }
 
     emit!(OrderFilled {

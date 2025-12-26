@@ -20,8 +20,8 @@ pub struct CreateToken<'info> {
     #[account(
         init,
         payer = signer,
-        space = 8 +32+ TokenDetails::INIT_SPACE,
-        seeds = [b"token_details", signer.key().as_ref(), &id_account.create_id.to_le_bytes()],
+        space = 8 + 32 + TokenDetails::INIT_SPACE,
+        seeds = [b"token_details", id_account.create_id.to_le_bytes().as_ref()],
         bump
     )]
     pub token_details_account: Account<'info, TokenDetails>,

@@ -4,9 +4,10 @@ package_manager = "yarn"
 [features]
 resolution = true
 skip-lint = false
+seeds = true
 
 [programs.localnet]
-pre_market = "5v8sL5hRV9StiPw8kDrLV2PMXKPz5sp84axEVecAH9Rt"
+pre_market = "DMwNjGF9B54oRFBMNvxefjGpRR8zX1jEaEqe1AMmQ7ui"
 
 [registry]
 url = "https://api.apr.dev"

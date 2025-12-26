@@ -5,7 +5,7 @@ mod error;
 mod constants;
 mod instructions;
 
-declare_id!("5v8sL5hRV9StiPw8kDrLV2PMXKPz5sp84axEVecAH9Rt");
+declare_id!("DMwNjGF9B54oRFBMNvxefjGpRR8zX1jEaEqe1AMmQ7ui");
 
 #[program]
 pub mod pre_market {

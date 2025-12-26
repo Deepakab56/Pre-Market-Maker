@@ -14,6 +14,10 @@ pub enum TokenStage {
     CANCELED,
     Ended,
 }
+
+pub const MAX_NAME_LEN: usize = 32;
+pub const MAX_SYMBOL_LEN: usize = 10;
+
 #[account]
 #[derive(InitSpace)]
 pub struct TokenDetails {
@@ -31,6 +35,22 @@ pub struct TokenDetails {
     pub stage: TokenStage,
     #[max_len(500)]
     pub order_list: Vec<Pubkey>,
+}
+
+impl TokenDetails {
+    pub const INIT_SPACE: usize =
+        4 +
+        MAX_NAME_LEN + // token_name
+        4 +
+        MAX_SYMBOL_LEN + // token_symbol
+        32 + // token_address
+        32 + // creator
+        8 + // creator_id
+        8 + // total_val
+        8 + // start_settle_time
+        8 + // end_settle_time
+        1 + // is_trading
+        1; // stage
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, AnchorDeserialize, AnchorSerialize, InitSpace)]

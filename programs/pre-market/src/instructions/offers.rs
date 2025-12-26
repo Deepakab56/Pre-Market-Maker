@@ -24,9 +24,8 @@ pub struct CreateOrder<'info> {
     #[account(
         mut,
         seeds = [
-            b"token_details".as_ref(),
-            token_details_account.creator.as_ref(),   
-            &token_details_account.creator_id.to_le_bytes()
+            b"token_details".as_ref(),   
+            &create_id.to_le_bytes().as_ref()
         ],
         bump,
     )]
@@ -36,10 +35,9 @@ pub struct CreateOrder<'info> {
         payer = signer,
         space = 8 + OrderBook::INIT_SPACE,
         seeds = [
-            b"create_order",
-            signer.key().as_ref(),
-            &create_id.to_le_bytes(),
-            &id_account.order_id.to_be_bytes(),
+            b"create_order".as_ref(),
+            create_id.to_le_bytes().as_ref(),
+            id_account.order_id.to_be_bytes().as_ref(),
         ],
         bump
     )]
@@ -103,6 +101,7 @@ pub fn process_order(
     acc.collateral_amt = collateral_amount;
     acc.order_creator = signer;
     acc.create_id = create_id;
+    ids.order_id += order_id;
     ctx.accounts.token_details_account.order_list.push(ctx.accounts.order_account_details.key());
     let time_stamp = Clock::get()?.unix_timestamp;
     emit!(OrderCreated {
